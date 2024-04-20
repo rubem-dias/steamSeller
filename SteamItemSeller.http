@@ -1,0 +1,6 @@
+@SteamItemSeller_HostAddress = http://localhost:5213
+
+GET {{SteamAuth_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
