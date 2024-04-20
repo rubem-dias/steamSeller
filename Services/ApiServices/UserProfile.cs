@@ -9,15 +9,14 @@ public class Authentication : IAuthentication
     private readonly CookieContainer _cookieContainer = new CookieContainer();
     private string _baseUri = "https://steamcommunity.com/";
     private HttpResponseMessage _response = new HttpResponseMessage();
+    private string _document = String.Empty;
     
     public Authentication(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
-    public async Task<string?> GetUserId(string sessionId, string steamLoginSecure)
+    public async Task<UserProfileResponse> GetUserProfile(string sessionId, string steamLoginSecure)
     {
-        _baseUri = "https://steamcommunity.com/";
-
         AddInitialCookies(_baseUri, "sessionId", sessionId);
         AddInitialCookies(_baseUri, "steamLoginSecure", steamLoginSecure);
 
@@ -25,32 +24,32 @@ public class Authentication : IAuthentication
 
         UpdateCookieContainer(_response, new Uri(_baseUri));
         
-        var profileResponse = await GetUpdatedProfile();
-        return profileResponse;
+        var getCurrentProfile = await GetCurrentProfile();
+        return getCurrentProfile;
     }
-    private async Task<string?> GetUpdatedProfile()
+    private async Task<UserProfileResponse> GetCurrentProfile()
     {
+        UserProfileResponse responseProfile = new();
+        
         ConfigureHttpClient();
         
-        const string pattern = @"g_steamID\s*=\s*""(\d+)"";";
-        
-        var document = await _httpClient
+        _document = await _httpClient
             .GetAsync(_baseUri).Result.Content
             .ReadAsStringAsync();
 
-        var profileSelectorHasFounded = document
-           .Contains("<!-- profile area -->");
+        var steamId = Regex.Match(_document, @"g_steamID\s*=\s*""(\d+)"";")
+            .Groups[1]
+            .Value;
         
-        var match = Regex.Match(document, pattern);
-        
-        if (profileSelectorHasFounded)
-        {
-            var steamId = match.Groups[1].Value;
-            return steamId;
-        } else
-        {
-            return null;
-        }
+        var profileUrl = Regex.Match(_document, "href\\s*=\\s*\"(https://steamcommunity\\.com/id/[^\"]*)\"")
+            .Groups[1]
+            .Value;
+
+        responseProfile.ProfileUrl = profileUrl;
+        responseProfile.SteamId = steamId;
+        responseProfile.CurrentSteamToken = GetCookiesAsString();
+
+        return responseProfile;
     }
     private string GetCookiesAsString()
     {

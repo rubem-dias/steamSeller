@@ -2,5 +2,5 @@
 
 public interface IAuthentication
 {
-    public Task<string?> GetUserId(string sessionId, string steamLoginSecure);
+    public Task<UserProfileResponse> GetUserProfile(string sessionId, string steamLoginSecure);
 }
