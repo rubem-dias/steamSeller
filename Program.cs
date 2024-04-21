@@ -1,6 +1,7 @@
 
 using SteamItemSeller.Application;
 using SteamItemSeller.Application.Interfaces;
+using SteamItemSeller.Services.ApiServices;
 using SteamItemSeller.Services.SteamServices;
 using SteamItemSeller.Services.SteamServices.Interfaces;
 
@@ -15,7 +16,8 @@ builder.Services.AddHttpClient();
 // Injection Services
 
 builder.Services.AddScoped<IClientUseCases, ClientUseCases>();
-builder.Services.AddScoped<IAuthentication, Authentication>();
+builder.Services.AddScoped<IUserProfile, UserProfile>();
+builder.Services.AddScoped<IUserInventory, UserInventory>();
 
 var app = builder.Build();
 
