@@ -1,6 +1,8 @@
-﻿namespace SteamItemSeller.Services.SteamServices.Interfaces;
+﻿using SteamItemSeller.Services.Dtos;
 
-public interface IAuthentication
+namespace SteamItemSeller.Services.SteamServices.Interfaces;
+
+public interface IUserProfile
 {
-    public Task<UserProfileResponse> GetUserProfile(string sessionId, string steamLoginSecure);
+    public Task<UserData> GetUserProfileData(string sessionId, string steamLoginSecure);
 }

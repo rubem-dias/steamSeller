@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SteamItemSeller.Application.Interfaces;
 using System.Web;
+using SteamItemSeller.Application.Dto;
 
 namespace SteamItemSeller.Controllers
 {
@@ -16,16 +17,20 @@ namespace SteamItemSeller.Controllers
             _clientUseCases = clientUseCases;
         }
         
-        [HttpGet("SellAllItems")]
-        public async Task<IActionResult> SellAllItems(string sessionId, string steamLoginSecure)
+        [HttpPost("SellAllItems")]
+        public async Task<IActionResult> SellAllItems(string sessionId, string steamLoginSecure, InputFilter filter)
         {
             try
             {
-                await _clientUseCases.SellAllItems(sessionId, steamLoginSecure);
+                if (!Enum.IsDefined(typeof(Category), filter.Category))
+                    return BadRequest("Invalid category. Please select a valid category.");
+                
+                await _clientUseCases.SellAllItems(sessionId, steamLoginSecure, filter);
                 return Ok();
             } catch (Exception ex)
             {
-                throw new Exception("Não foi possível realizar o login.", ex.InnerException);
+                //Add future log exception
+                return StatusCode(500, ex.Message);
             }
         }
     }

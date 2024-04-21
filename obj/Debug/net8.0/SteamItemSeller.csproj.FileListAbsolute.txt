@@ -42,3 +42,4 @@ C:\Users\rubem\source\repos\myRepositories\SteamItemSeller\obj\Debug\net8.0\refi
 C:\Users\rubem\source\repos\myRepositories\SteamItemSeller\obj\Debug\net8.0\SteamItemSeller.pdb
 C:\Users\rubem\source\repos\myRepositories\SteamItemSeller\obj\Debug\net8.0\SteamItemSeller.genruntimeconfig.cache
 C:\Users\rubem\source\repos\myRepositories\SteamItemSeller\obj\Debug\net8.0\ref\SteamItemSeller.dll
+C:\Users\rubem\source\repos\myRepositories\SteamItemSeller\obj\Debug\net8.0\SteamItemSeller.sourcelink.json
