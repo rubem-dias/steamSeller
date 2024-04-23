@@ -19,7 +19,7 @@ public class UserProfile(HttpClient httpClient) : IUserProfile
         {
             var userData = new UserData();
 
-            AddInitialCookies(BaseUri, "sessionid", sessionId);
+            AddInitialCookies(BaseUri, "sessionId", sessionId);
             AddInitialCookies(BaseUri, "steamLoginSecure", steamLoginSecure);
 
             _response = await httpClient.GetAsync(BaseUri);

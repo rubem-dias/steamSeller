@@ -182,7 +182,7 @@ public class UserInventory : IUserInventory
         var sellItemMarketUrl = "https://steamcommunity.com/market/sellitem/";
 
         httpClient.DefaultRequestHeaders.Remove("Cookie");
-        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie);
+        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie.Replace("sessionId", "sessionid"));
 
         httpClient.DefaultRequestHeaders.Referrer = new Uri($"{userData.ProfileUrl}inventory");
 
