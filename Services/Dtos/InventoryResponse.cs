@@ -2,7 +2,7 @@
 
 namespace SteamItemSeller.Services.Dtos
 {
-    public class InventoryDto
+    public class InventoryResponse
     {
         public List<Asset> Assets { get; set; } = [];
         public List<Description> Descriptions { get; set; } = [];

@@ -17,16 +17,17 @@ namespace SteamItemSeller.Controllers
             _clientUseCases = clientUseCases;
         }
         
-        [HttpPost("SellAllItems")]
-        public async Task<IActionResult> SellAllItems(string sessionId, string steamLoginSecure, InputFilter filter)
+        [HttpPost("SellItems")]
+        public async Task<IActionResult> SellItems(string sessionId, string steamLoginSecure, InputFilter? filter)
         {
             try
             {
                 if (!Enum.IsDefined(typeof(Category), filter.Category))
                     return BadRequest("Invalid category. Please select a valid category.");
                 
-                await _clientUseCases.SellAllItems(sessionId, steamLoginSecure, filter);
-                return Ok();
+                var response = await _clientUseCases.SellItems(sessionId, steamLoginSecure, filter);
+                return Ok(response);
+
             } catch (Exception ex)
             {
                 //Add future log exception

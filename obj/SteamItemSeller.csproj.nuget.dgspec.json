@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\SteamItemSeller.csproj": {}
+    "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj": {}
   },
   "projects": {
-    "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\SteamItemSeller.csproj": {
+    "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\SteamItemSeller.csproj",
+        "projectUniqueName": "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj",
         "projectName": "SteamItemSeller",
-        "projectPath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\SteamItemSeller.csproj",
+        "projectPath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj",
         "packagesPath": "C:\\Users\\rubem\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\obj\\",
+        "outputPath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\rubem\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -34,6 +34,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -51,6 +56,10 @@
             "Newtonsoft.Json": {
               "target": "Package",
               "version": "[13.0.3, )"
+            },
+            "Polly": {
+              "target": "Package",
+              "version": "[8.3.1, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",

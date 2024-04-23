@@ -1,6 +1,7 @@
 ﻿using SteamItemSeller.Application.Dto;
 using SteamItemSeller.Application.Interfaces;
 using SteamItemSeller.Services;
+using SteamItemSeller.Services.Dtos;
 using SteamItemSeller.Services.SteamServices.Interfaces;
 
 namespace SteamItemSeller.Application
@@ -14,16 +15,14 @@ namespace SteamItemSeller.Application
             _userProfile = userProfile;
             _userInventory = userInventory;
         }
-        public async Task SellAllItems(string sessionId, string steamLoginSecure, InputFilter? filter)
+        public async Task<List<ItemPostOrder>> SellItems(string sessionId, string steamLoginSecure, InputFilter? filter)
         {
             try
             {
-                var userProfileUri = await _userProfile.GetUserProfileData(sessionId, steamLoginSecure);
-                var getAllItems = await _userInventory.GetAllItems(userProfileUri.ProfileUrl!, filter!);
+                var userData = await _userProfile.GetUserProfileData(sessionId, steamLoginSecure);
+                var orderedItemsToSell = await _userInventory.OrderedItemsToSell(userData, filter!, sessionId);
 
-                //TODO API TO GET MEDIUM PRICES PER ITEM
-                //FILTER FOR SELECT CATEGORIES ETC
-                //FINALLY CALL SELL METHOD ITEMS
+                return orderedItemsToSell!;
 
             } catch (Exception ex)
             {

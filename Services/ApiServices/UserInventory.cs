@@ -1,78 +1,109 @@
 ﻿using System.Text.RegularExpressions;
-using Microsoft.OpenApi.Extensions;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
 using SteamItemSeller.Application.Dto;
-using SteamItemSeller.Application.Exceptions;
 using SteamItemSeller.Services.Dtos;
 using SteamItemSeller.Services.SteamServices.Interfaces;
+using SteamItemSeller.Util;
 using EnumExtensions = SteamItemSeller.Util.EnumExtensions;
 
 namespace SteamItemSeller.Services.ApiServices;
-public class UserInventory(HttpClient httpClient) : IUserInventory
+public class UserInventory : IUserInventory
 {
-    private string _document = string.Empty;
     private const string BaseUri = "https://steamcommunity.com/inventory";
-    public async Task<InventoryDto?> GetAllItems(string profileUri, InputFilter filter)
+    private readonly HttpClient httpClient;
+    private readonly HttpRetryHandler httpRetryHandler;
+
+    public UserInventory(HttpClient httpClient, HttpRetryHandler httpRetryHandler)
+    {
+        this.httpClient = httpClient;
+        this.httpRetryHandler = httpRetryHandler;
+    }
+
+    public async Task<List<ItemPostOrder?>> OrderedItemsToSell(UserData userData, InputFilter filter, string sessionId)
     {
         try
         {
-            var getInventoryCredentials = await GetUserInventoryCredentials(profileUri);
-            var completeInventoryUrl = $"{BaseUri}/{getInventoryCredentials[0]}/{getInventoryCredentials[1]}/{getInventoryCredentials[2]}";
-            
+            var credentials = await GetUserInventoryCredentials(userData);
+            var completeInventoryUrl = $"{BaseUri}/{credentials.SteamId}/{credentials.AppId}/{credentials.ContextId}";
+
             var handleInventoryResponse = await HandleInventoryResponse(completeInventoryUrl, filter);
-            
-            return handleInventoryResponse;
-            
-        } catch (UserInventoryException)
+            var handleItemsObjectToSell = await HandleItemsObjectsToSell(handleInventoryResponse!, credentials!, sessionId);
+
+            var itemOrdersResponse = await PostItemOrders(handleItemsObjectToSell, userData);
+
+            return itemOrdersResponse!;
+        }
+        catch (Exception)
         {
-            throw new UserInventoryException("There are no items eligible to be sold");
+            throw new Exception("There are no items eligible to be sold");
         }
     }
-    private async Task<List<string>> GetUserInventoryCredentials(string profileUri)
+    private async Task<UserWalletCredentials> GetUserInventoryCredentials(UserData userData)
     {
-        var completeCredentials = new List<string>();
-        
-        _document = await httpClient
-            .GetAsync(profileUri).Result.Content
+        var walletCredentials = new UserWalletCredentials();
+
+        #region Get Infos From Profile Url
+
+        var document = await httpClient
+            .GetAsync(userData.ProfileUrl).Result.Content
             .ReadAsStringAsync();
-        
-        var inventoryCredentials = Regex.Match(_document, @"https://steamcommunity.com/id/.+/inventory/#([^""]+)")
-            .Groups[1]
-            .Value;
-        
-        var profileId = Regex.Match(_document, @"""steamid"":""(\d+)""")
+
+        var inventoryCredentials = Regex.Match(document, @"https://steamcommunity.com/id/.+/inventory/#([^""]+)")
+           .Groups[1]
+           .Value;
+
+        var steamId = Regex.Match(document, @"""steamid"":""(\d+)""")
             .Groups[1]
             .Value;
 
         var inventoryCredentialsToList = inventoryCredentials
             .Split("_");
-        
-        completeCredentials.Add(profileId);
-        completeCredentials.Add(inventoryCredentialsToList[0]);
-        completeCredentials.Add(inventoryCredentialsToList[1]);
 
-        return completeCredentials;
+        walletCredentials.SteamId = steamId;
+        walletCredentials.AppId = inventoryCredentialsToList[0];
+        walletCredentials.ContextId = inventoryCredentialsToList[1];
+
+        #endregion
+
+        #region Get Infos From Profile Inventory Url
+
+        httpClient.DefaultRequestHeaders.Remove("Cookie");
+        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie);
+
+        document = await httpClient
+                .GetAsync($"{userData.ProfileUrl}/inventory").Result.Content
+                .ReadAsStringAsync();
+
+        walletCredentials.Currency = Regex.Match(document, @"""wallet_currency"":(\d+)").Groups[1].Value;
+        walletCredentials.Country = Regex.Match(document, @"\""wallet_country\"":\""(.*?)\""").Groups[1].Value;
+
+        #endregion
+
+        return walletCredentials;
+
     }
-
-    private async Task<InventoryDto?> HandleInventoryResponse(string completeInventoryUrl, InputFilter filter)
+    private async Task<InventoryResponse?> HandleInventoryResponse(string completeInventoryUrl, InputFilter filter)
     {
-        var response = await httpClient.GetAsync(completeInventoryUrl);
-        var responseContent = await response.Content.ReadAsStringAsync();
-        
+        HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.GetAsync(completeInventoryUrl));
+
         if (!response.IsSuccessStatusCode)
             throw new Exception("Unable to fetch items");
-        
-        var inventory = JsonConvert.DeserializeObject<InventoryDto>(responseContent);
-        
-        if (filter.Category != Category.None && inventory != null)
-            inventory = await InventoryFilter(inventory!, filter);
-        
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var inventory = JsonConvert.DeserializeObject<InventoryResponse>(responseContent);
+
+        if (inventory != null)
+        {
+            return await InventoryFilter(inventory, filter);
+        }
+
         return inventory;
     }
-
-    private static Task<InventoryDto> InventoryFilter(InventoryDto inventory, InputFilter filter)
+    private static Task<InventoryResponse> InventoryFilter(InventoryResponse inventory, InputFilter filter)
     {
-        var inventoryFiltered = new InventoryDto();
+        var inventoryFiltered = new InventoryResponse();
         
         var currentCategory = EnumExtensions.GetDisplayName(filter.Category)
             .ToLower()
@@ -83,13 +114,108 @@ public class UserInventory(HttpClient httpClient) : IUserInventory
                 .Any(tag => tag.Category == currentCategory)
             ).ToList();
         
-        var filteredAssetsByDescriptions = inventory.Assets.Where(asset =>
-            filteredDescriptions.Any(description => description.ClassId == asset.ClassId)
-        ).ToList();
+        var filteredAssetsByDescriptions = inventory.Assets
+            .Where(asset => filteredDescriptions
+                 .Any(description => description.ClassId == asset.ClassId)
+            ).ToList();
 
         inventoryFiltered.Assets = filteredAssetsByDescriptions;
         inventoryFiltered.Descriptions = filteredDescriptions;
         
         return Task.FromResult(inventoryFiltered);
+    }
+    private async Task<List<ItemToSell>> HandleItemsObjectsToSell(InventoryResponse inventory, UserWalletCredentials walletCredentials, string sessionId)
+    {
+        var itemsToSell = new List<ItemToSell>();
+
+        try
+        {
+            foreach (var item in inventory.Descriptions)
+            {
+
+                var itemAsset = inventory.Assets.Where(asset => asset.ClassId == item.ClassId).FirstOrDefault();
+
+                if (itemAsset == null)
+                    continue;
+
+                var itemPrice = await HandleItemsOverviewPrices(item, walletCredentials);
+
+                var itemToSell = new ItemToSell
+                {
+                    SessionId = sessionId,
+                    AppId = walletCredentials.AppId,
+                    ContextId = walletCredentials.ContextId,
+                    AssetId = itemAsset!.AssetId!,
+                    Amount = itemAsset!.Amount!,
+                    Price = itemPrice.MedianPrice != null ? itemPrice.MedianPrice.ConvertPrice() : itemPrice.LowestPrice!.ConvertPrice()!,
+                    Name = item.Name
+                };
+
+                itemsToSell.Add(itemToSell);
+            }
+        } catch (Exception ex)
+        {
+            throw;
+        }
+
+        return itemsToSell;
+    }
+    private async Task<ItemPriceOverviewResponse> HandleItemsOverviewPrices(Description itemDescription, UserWalletCredentials userWalletCredentials)
+    {
+        var marketUrl = $"https://steamcommunity.com/market/priceoverview/?country={userWalletCredentials.Country}" +
+            $"&currency={userWalletCredentials.Currency}" +
+            $"&appid={userWalletCredentials.AppId}" +
+            $"&market_hash_name={itemDescription.MarketHashName}";
+
+        HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.GetAsync(marketUrl));
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to retrieve item prices");
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var itemPriceOverview = JsonConvert.DeserializeObject<ItemPriceOverviewResponse>(responseContent);
+
+        return itemPriceOverview!;
+    }
+    private async Task<List<ItemPostOrder>> PostItemOrders(List<ItemToSell> items, UserData userData)
+    {
+        List<ItemPostOrder> itemsOrders = new List<ItemPostOrder>();
+        var sellItemMarketUrl = "https://steamcommunity.com/market/sellitem/";
+
+        httpClient.DefaultRequestHeaders.Remove("Cookie");
+        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie);
+
+        httpClient.DefaultRequestHeaders.Referrer = new Uri($"{userData.ProfileUrl}inventory");
+
+        foreach (var item in items)
+        {
+            var formData = new Dictionary<string, string>
+            {
+                { "sessionid", item.SessionId},
+                { "appid", item.AppId.ToString()},
+                { "contextid", item.ContextId},
+                { "assetid", item.AssetId},
+                { "amount", item.Amount.ToString()},
+                { "price", item.Price.ToString()}
+            };
+
+            var content = new FormUrlEncodedContent(formData);
+
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-www-form-urlencoded");
+            content.Headers.ContentType.CharSet = "UTF-8";
+
+            HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.PostAsync(sellItemMarketUrl, content));
+
+            var itemOrder = new ItemPostOrder
+            {
+                Name = item.Name,
+                Price = item.Price,
+                CreatedAt = DateTime.Now,
+                Status = response.IsSuccessStatusCode ? Status.Ok : Status.Failed
+            };
+
+            itemsOrders.Add(itemOrder);
+        }
+
+        return itemsOrders;
     }
 }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "onDebr3BoOLy8TSKu/I1eqQRRZ0xkllVmsBPtReA5nfj6tPk4poubKfoKLQov4YpHxFkwUeJaBFNeVZso73Zkg==",
+  "dgSpecHash": "vtuQl0NpmndqQASXsa8yjXZ/fX0ndtx1pq4d/c3fs1K8bGEggBGAf6W62aJ0FVFSngJeKy3UMtuRHZfCivwysg==",
   "success": true,
-  "projectFilePath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\SteamItemSeller\\SteamItemSeller.csproj",
+  "projectFilePath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\rubem\\.nuget\\packages\\anglesharp\\1.0.6\\anglesharp.1.0.6.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\aspnet.security.openid\\8.0.0\\aspnet.security.openid.8.0.0.nupkg.sha512",
@@ -17,6 +17,8 @@
     "C:\\Users\\rubem\\.nuget\\packages\\microsoft.identitymodel.tokens\\7.1.2\\microsoft.identitymodel.tokens.7.1.2.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\microsoft.openapi\\1.2.3\\microsoft.openapi.1.2.3.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
+    "C:\\Users\\rubem\\.nuget\\packages\\polly\\8.3.1\\polly.8.3.1.nupkg.sha512",
+    "C:\\Users\\rubem\\.nuget\\packages\\polly.core\\8.3.1\\polly.core.8.3.1.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\swashbuckle.aspnetcore\\6.4.0\\swashbuckle.aspnetcore.6.4.0.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.4.0\\swashbuckle.aspnetcore.swagger.6.4.0.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.4.0\\swashbuckle.aspnetcore.swaggergen.6.4.0.nupkg.sha512",

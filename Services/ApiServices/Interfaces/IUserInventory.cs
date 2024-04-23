@@ -6,5 +6,5 @@ namespace SteamItemSeller.Services.SteamServices.Interfaces;
 
 public interface IUserInventory
 {
-    public Task<InventoryDto?> GetAllItems(string profileUri, InputFilter filter);
+    public Task<List<ItemPostOrder?>> OrderedItemsToSell(UserData userData, InputFilter filter, string sessionId);
 }
