@@ -33,6 +33,7 @@ namespace SteamItemSeller.Services.Dtos
     public class Tag
     {
         public string? Category { get; set; }
+        [JsonProperty("internal_name")]
         public string? InternalName { get; set; }
         public string? LocalizedCategoryName { get; set; }
         public string? LocalizedTagName { get; set; }

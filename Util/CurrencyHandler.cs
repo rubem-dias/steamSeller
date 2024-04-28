@@ -1,31 +1,42 @@
-﻿using System.Text.RegularExpressions;
+﻿using Polly.CircuitBreaker;
+using System.Text.RegularExpressions;
 
 namespace SteamItemSeller.Util
 {
     public static class CurrencyHandler
     {
-        public static string ConvertPrice(this string price)
+        public static string? ConvertPrice(this string price)
         {
-            var steamFeePercent = 0.95; //steam fee affect in 5% in item
+            try
+            {
 
-            string numericString = Regex.Replace(price, @"[^\d,]", "");
-            string[] parts = numericString.Split(',');
+                if (price == null)
+                    return null;
 
-            string integerPart = parts[0];
-            string fractionalPart = parts.Length > 1 ? parts[1] : "0";
+                var steamFeePercent = 0.95; //steam fee affect in 5% in item
 
-            if (fractionalPart.Length == 1)
-                fractionalPart += "0"; // Append zero to make it two digits
-            else if (fractionalPart.Length > 2)
-                fractionalPart = fractionalPart.Substring(0, 2); // Truncate if more than two digits
+                string numericString = Regex.Replace(price, @"[^\d,]", "");
+                string[] parts = numericString.Split(',');
 
-            string totalCents = integerPart + fractionalPart;
+                string integerPart = parts[0];
+                string fractionalPart = parts.Length > 1 ? parts[1] : "0";
 
-            int cents = int.Parse(totalCents);
+                if (fractionalPart.Length == 1)
+                    fractionalPart += "0"; // Append zero to make it two digits
+                else if (fractionalPart.Length > 2)
+                    fractionalPart = fractionalPart.Substring(0, 2); // Truncate if more than two digits
 
-            int discountedPrice = (int)Math.Floor(cents * steamFeePercent);
+                string totalCents = integerPart + fractionalPart;
 
-            return discountedPrice.ToString(); // Convert the discounted price back to a string
+                int cents = int.Parse(totalCents);
+
+                int discountedPrice = (int)Math.Floor(cents * steamFeePercent);
+
+                return discountedPrice.ToString(); // Convert the discounted price back to a string
+            } catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
 
         }
     }

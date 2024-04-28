@@ -14,6 +14,8 @@ public class UserInventory : IUserInventory
     private const string BaseUri = "https://steamcommunity.com/inventory";
     private readonly HttpClient httpClient;
     private readonly HttpRetryHandler httpRetryHandler;
+    private const string SteamAppId = "753";
+    private const string ContextId = "6";
 
     public UserInventory(HttpClient httpClient, HttpRetryHandler httpRetryHandler)
     {
@@ -46,31 +48,21 @@ public class UserInventory : IUserInventory
 
         #region Get Infos From Profile Url
 
+
+        httpClient.DefaultRequestHeaders.Remove("Cookie");
+        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie);
+
         var document = await httpClient
-            .GetAsync(userData.ProfileUrl).Result.Content
+            .GetAsync($"{userData.ProfileUrl}inventory").Result.Content
             .ReadAsStringAsync();
 
-        var inventoryCredentials = Regex.Match(document, @"https://steamcommunity.com/id/.+/inventory/#([^""]+)")
-           .Groups[1]
-           .Value;
-
-        var steamId = Regex.Match(document, @"""steamid"":""(\d+)""")
-            .Groups[1]
-            .Value;
-
-        var inventoryCredentialsToList = inventoryCredentials
-            .Split("_");
-
-        walletCredentials.SteamId = steamId;
-        walletCredentials.AppId = inventoryCredentialsToList[0];
-        walletCredentials.ContextId = inventoryCredentialsToList[1];
+        walletCredentials.SteamId = Regex.Match(document, @"g_steamID = ""(\d+)""").Groups[1].Value;
+        walletCredentials.AppId = SteamAppId;
+        walletCredentials.ContextId = ContextId;
 
         #endregion
 
         #region Get Infos From Profile Inventory Url
-
-        httpClient.DefaultRequestHeaders.Remove("Cookie");
-        httpClient.DefaultRequestHeaders.Add("Cookie", userData.Cookie);
 
         document = await httpClient
                 .GetAsync($"{userData.ProfileUrl}/inventory").Result.Content
@@ -111,7 +103,7 @@ public class UserInventory : IUserInventory
 
         var filteredDescriptions = inventory.Descriptions
             .Where(description => description.Tags
-                .Any(tag => tag.Category == currentCategory)
+                .Any(tag => tag.Category!.ToLower() == currentCategory || tag.InternalName!.ToLower() == currentCategory && description.Tradable == 1)
             ).ToList();
         
         var filteredAssetsByDescriptions = inventory.Assets
@@ -139,6 +131,10 @@ public class UserInventory : IUserInventory
                     continue;
 
                 var itemPrice = await HandleItemsOverviewPrices(item, walletCredentials);
+                var itemPriceConverted = itemPrice.MedianPrice != null ? itemPrice.MedianPrice.ConvertPrice() : itemPrice.LowestPrice!.ConvertPrice();
+
+                if (itemPriceConverted == null)
+                    continue;
 
                 var itemToSell = new ItemToSell
                 {
@@ -147,7 +143,7 @@ public class UserInventory : IUserInventory
                     ContextId = walletCredentials.ContextId,
                     AssetId = itemAsset!.AssetId!,
                     Amount = itemAsset!.Amount!,
-                    Price = itemPrice.MedianPrice != null ? itemPrice.MedianPrice.ConvertPrice() : itemPrice.LowestPrice!.ConvertPrice()!,
+                    Price = itemPriceConverted,
                     Name = item.Name
                 };
 
@@ -162,19 +158,26 @@ public class UserInventory : IUserInventory
     }
     private async Task<ItemPriceOverviewResponse> HandleItemsOverviewPrices(Description itemDescription, UserWalletCredentials userWalletCredentials)
     {
-        var marketUrl = $"https://steamcommunity.com/market/priceoverview/?country={userWalletCredentials.Country}" +
-            $"&currency={userWalletCredentials.Currency}" +
-            $"&appid={userWalletCredentials.AppId}" +
-            $"&market_hash_name={itemDescription.MarketHashName}";
+        try
+        {
+            var marketUrl = $"https://steamcommunity.com/market/priceoverview/?country={userWalletCredentials.Country}" +
+                $"&currency={userWalletCredentials.Currency}" +
+                $"&appid={userWalletCredentials.AppId}" +
+                $"&market_hash_name={itemDescription.MarketHashName.Replace("&", "%26")}";
 
-        HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.GetAsync(marketUrl));
-        if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to retrieve item prices");
+            HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.GetAsync(marketUrl));
+            if (!response.IsSuccessStatusCode)
+                throw new Exception("Failed to retrieve item prices");
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var itemPriceOverview = JsonConvert.DeserializeObject<ItemPriceOverviewResponse>(responseContent);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var itemPriceOverview = JsonConvert.DeserializeObject<ItemPriceOverviewResponse>(responseContent);
 
-        return itemPriceOverview!;
+
+            return itemPriceOverview!;
+        } catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
     }
     private async Task<List<ItemPostOrder>> PostItemOrders(List<ItemToSell> items, UserData userData)
     {
@@ -207,7 +210,7 @@ public class UserInventory : IUserInventory
 
             var itemOrder = new ItemPostOrder
             {
-                Name = item.Name,
+                Name = item.Name!,
                 Price = item.Price,
                 CreatedAt = DateTime.Now,
                 Status = response.IsSuccessStatusCode ? Status.Ok : Status.Failed
