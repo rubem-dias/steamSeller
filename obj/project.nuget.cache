@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "vtuQl0NpmndqQASXsa8yjXZ/fX0ndtx1pq4d/c3fs1K8bGEggBGAf6W62aJ0FVFSngJeKy3UMtuRHZfCivwysg==",
+  "dgSpecHash": "mJHSej6X8u4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\rubem\\source\\repos\\myRepositories\\steamSeller\\SteamItemSeller.csproj",
+  "projectFilePath": "C:\\Users\\rubem\\source\\repos\\steamSeller\\SteamItemSeller.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\rubem\\.nuget\\packages\\anglesharp\\1.0.6\\anglesharp.1.0.6.nupkg.sha512",
     "C:\\Users\\rubem\\.nuget\\packages\\aspnet.security.openid\\8.0.0\\aspnet.security.openid.8.0.0.nupkg.sha512",
