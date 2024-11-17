@@ -7,9 +7,17 @@ public class HttpRetryHandler
 
     public HttpRetryHandler()
     {
-        retryPolicy = Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode && r.StatusCode != System.Net.HttpStatusCode.BadRequest)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(15 * retryAttempt));
+        retryPolicy = Policy.HandleResult<HttpResponseMessage>(
+                r => !r.IsSuccessStatusCode && r.StatusCode != System.Net.HttpStatusCode.BadRequest)
+            .WaitAndRetryAsync(
+                3,
+                retryAttempt =>
+                    retryAttempt == 1
+                        ? TimeSpan.FromMinutes(1)
+                        : TimeSpan.FromSeconds(15 * retryAttempt)
+            );
     }
+
 
     public async Task<HttpResponseMessage> ExecuteAsync(Func<Task<HttpResponseMessage>> action)
     {

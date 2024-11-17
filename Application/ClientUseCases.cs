@@ -15,11 +15,11 @@ namespace SteamItemSeller.Application
             _userProfile = userProfile;
             _userInventory = userInventory;
         }
-        public async Task<List<ItemPostOrder>> SellItems(string sessionId, string steamLoginSecure, InputFilter? filter)
+        public async Task<List<ItemPostOrder>> SellItems(string sessionId, string steamLoginSecure, string userProfile, InputFilter? filter)
         {
             try
             {
-                var userData = await _userProfile.GetUserProfileData(sessionId, steamLoginSecure);
+                var userData = await _userProfile.GetUserProfileData(sessionId, steamLoginSecure, userProfile);
                 var orderedItemsToSell = await _userInventory.OrderedItemsToSell(userData, filter!, sessionId);
 
                 return orderedItemsToSell!;

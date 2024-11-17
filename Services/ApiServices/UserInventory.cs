@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
@@ -16,11 +17,13 @@ public class UserInventory : IUserInventory
     private readonly HttpRetryHandler httpRetryHandler;
     private const string SteamAppId = "753";
     private const string ContextId = "6";
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public UserInventory(HttpClient httpClient, HttpRetryHandler httpRetryHandler)
+    public UserInventory(HttpClient httpClient, HttpRetryHandler httpRetryHandler, IHttpClientFactory httpClientFactory)
     {
         this.httpClient = httpClient;
         this.httpRetryHandler = httpRetryHandler;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<List<ItemPostOrder?>> OrderedItemsToSell(UserData userData, InputFilter filter, string sessionId)
@@ -37,9 +40,9 @@ public class UserInventory : IUserInventory
 
             return itemOrdersResponse!;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw new Exception("There are no items eligible to be sold");
+            throw new Exception(ex.Message);
         }
     }
     private async Task<UserWalletCredentials> GetUserInventoryCredentials(UserData userData)
@@ -131,7 +134,10 @@ public class UserInventory : IUserInventory
                     continue;
 
                 var itemPrice = await HandleItemsOverviewPrices(item, walletCredentials);
-                var itemPriceConverted = itemPrice.MedianPrice != null ? itemPrice.MedianPrice.ConvertPrice() : itemPrice.LowestPrice!.ConvertPrice();
+
+                var itemPriceConverted = itemPrice?.MedianPrice != null 
+                    ? itemPrice?.MedianPrice?.ConvertPrice() 
+                    : itemPrice?.LowestPrice?.ConvertPrice();
 
                 if (itemPriceConverted == null)
                     continue;
@@ -158,6 +164,8 @@ public class UserInventory : IUserInventory
     }
     private async Task<ItemPriceOverviewResponse> HandleItemsOverviewPrices(Description itemDescription, UserWalletCredentials userWalletCredentials)
     {
+        var client = _httpClientFactory.CreateClient();
+
         try
         {
             var marketUrl = $"https://steamcommunity.com/market/priceoverview/?country={userWalletCredentials.Country}" +
@@ -166,17 +174,24 @@ public class UserInventory : IUserInventory
                 $"&market_hash_name={itemDescription.MarketHashName.Replace("&", "%26")}";
 
             HttpResponseMessage response = await httpRetryHandler.ExecuteAsync(() => httpClient.GetAsync(marketUrl));
-            if (!response.IsSuccessStatusCode)
-                throw new Exception("Failed to retrieve item prices");
+
+            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.TooManyRequests)
+                throw new Exception($"Failed to retrieve item prices for {itemDescription.MarketHashName} - {itemDescription.Name}");
+
+            if (response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.InternalServerError)
+            {
+                Console.WriteLine($"Unable to fetch prices");
+                return new ItemPriceOverviewResponse();
+            }
 
             var responseContent = await response.Content.ReadAsStringAsync();
             var itemPriceOverview = JsonConvert.DeserializeObject<ItemPriceOverviewResponse>(responseContent);
 
-
             return itemPriceOverview!;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
-            throw new Exception(e.Message);
+            return new ItemPriceOverviewResponse();
         }
     }
     private async Task<List<ItemPostOrder>> PostItemOrders(List<ItemToSell> items, UserData userData)

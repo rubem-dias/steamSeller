@@ -10,29 +10,23 @@ public class UserProfile(HttpClient httpClient) : IUserProfile
     private readonly CookieContainer _cookieContainer = new CookieContainer();
     private HttpResponseMessage _response = new HttpResponseMessage();
 
-    private const string BaseUri = "https://steamcommunity.com/";
-    private string _document = string.Empty;
+    private const string _baseUri = "https://steamcommunity.com/id";
 
-    public async Task<UserData> GetUserProfileData(string sessionId, string steamLoginSecure)
+    public async Task<UserData> GetUserProfileData(string sessionId, string steamLoginSecure, string userProfile)
     {
         try
         {
             var userData = new UserData();
+            var url = $"{_baseUri}/{userProfile}";
 
-            AddInitialCookies(BaseUri, "sessionid", sessionId);
-            AddInitialCookies(BaseUri, "steamLoginSecure", steamLoginSecure);
+            AddInitialCookies(url, "sessionid", sessionId);
+            AddInitialCookies(url, "steamLoginSecure", steamLoginSecure);
 
-            _response = await httpClient.GetAsync(BaseUri);
+            _response = await httpClient.GetAsync(url);
 
-            var profileUri = await GetProfileUri();
             var currentCookies = await GetCookiesAsString();
 
-            if (string.IsNullOrEmpty(profileUri) || string.IsNullOrEmpty(currentCookies))
-            {
-                throw new Exception("Verify your credentials and try again");
-            }
-
-            userData.ProfileUrl = profileUri;
+            userData.ProfileUrl = url;
             userData.Cookie = currentCookies;
 
             return userData;
@@ -42,23 +36,9 @@ public class UserProfile(HttpClient httpClient) : IUserProfile
             throw new Exception(ex.Message);
         }
     }
-    private async Task<string> GetProfileUri()
-    {
-        ConfigureHttpClient();
-        
-        _document = await httpClient
-            .GetAsync(BaseUri).Result.Content
-            .ReadAsStringAsync();
-        
-        var profileUrl = Regex.Match(_document, "href\\s*=\\s*\"(https://steamcommunity\\.com/id/[^\"]*)\"")
-            .Groups[1]
-            .Value;
-
-        return profileUrl;
-    }
     private Task<string> GetCookiesAsString()
     {
-        var cookieCollection = _cookieContainer.GetCookies(new Uri(BaseUri));
+        var cookieCollection = _cookieContainer.GetCookies(new Uri(_baseUri));
         var cookieHeader = new StringBuilder();
 
         foreach (Cookie cookie in cookieCollection)
@@ -69,18 +49,6 @@ public class UserProfile(HttpClient httpClient) : IUserProfile
         }
 
         return Task.FromResult(cookieHeader.ToString());
-    }
-    private async void ConfigureHttpClient()
-    {
-        var cookiesAsString = await GetCookiesAsString();
-
-        if (!string.IsNullOrEmpty(cookiesAsString))
-        {
-            httpClient.DefaultRequestHeaders.Remove("Cookie");
-            httpClient.DefaultRequestHeaders.Add("Cookie", cookiesAsString);
-        }
-
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
     }
     private void AddInitialCookies(string url, string name, string value)
     {

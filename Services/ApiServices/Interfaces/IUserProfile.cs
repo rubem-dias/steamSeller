@@ -4,5 +4,5 @@ namespace SteamItemSeller.Services.SteamServices.Interfaces;
 
 public interface IUserProfile
 {
-    public Task<UserData> GetUserProfileData(string sessionId, string steamLoginSecure);
+    public Task<UserData> GetUserProfileData(string sessionId, string steamLoginSecure, string userProfile);
 }
