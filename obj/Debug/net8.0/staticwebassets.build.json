@@ -1,11 +1,12 @@
 {
   "Version": 1,
-  "Hash": "kN7HyFkylyefhElW0Rrnq1THPcHaxrHxtCSrBhhLuog=",
+  "Hash": "UWgCSbyO0rZtT+j/Tj7AvhGKcycwBIiG1vtDQYNS69A=",
   "Source": "SteamItemSeller",
   "BasePath": "_content/SteamItemSeller",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
   "DiscoveryPatterns": [],
-  "Assets": []
+  "Assets": [],
+  "Endpoints": []
 }
