@@ -23,12 +23,13 @@ builder.Services.AddScoped<IUserInventory, UserInventory>();
 var app = builder.Build();
 
 // Middleware
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SteamItemSeller API V1");
+    c.RoutePrefix = string.Empty;
+});
 app.UseHttpsRedirection();
 
 app.MapControllers();
