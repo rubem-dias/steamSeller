@@ -1034,11 +1034,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\rubem\\source\\repos\\steamSeller\\SteamItemSeller.csproj",
+      "projectUniqueName": "C:\\Users\\rubem\\source\\repos\\MyRepos\\steamSeller\\SteamItemSeller.csproj",
       "projectName": "SteamItemSeller",
-      "projectPath": "C:\\Users\\rubem\\source\\repos\\steamSeller\\SteamItemSeller.csproj",
+      "projectPath": "C:\\Users\\rubem\\source\\repos\\MyRepos\\steamSeller\\SteamItemSeller.csproj",
       "packagesPath": "C:\\Users\\rubem\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\rubem\\source\\repos\\steamSeller\\obj\\",
+      "outputPath": "C:\\Users\\rubem\\source\\repos\\MyRepos\\steamSeller\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1069,9 +1069,9 @@
       "restoreAuditProperties": {
         "enableAudit": "true",
         "auditLevel": "low",
-        "auditMode": "all"
+        "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -1117,7 +1117,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

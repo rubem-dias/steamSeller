@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SteamItemSeller")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ec9968bba034d83d59ae6141116c658069cb13a6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c8fb13907902c156614ffc9be22a8970d98517cd")]
 [assembly: System.Reflection.AssemblyProductAttribute("SteamItemSeller")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SteamItemSeller")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
